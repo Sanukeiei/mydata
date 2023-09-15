@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Data Display</title>
+    <style>
+        /* CSS สำหรับปุ่มล็อกเอาตัว */
+        .logout-button {
+            background-color: #FF5733; /* สีพื้นหลังปุ่ม */
+            color: white; /* สีตัวอักษร */
+            border: none; /* ไม่มีเส้นขอบ */
+            padding: 10px 20px; /* ขนาดของปุ่ม */
+            text-align: center; /* จัดข้อความในปุ่มกลางหน้า */
+            text-decoration: none; /* ไม่มีขีดเส้นใต้ข้อความ */
+            display: inline-block; /* แสดงเป็นปุ่มแบบ inline-block */
+            font-size: 16px; /* ขนาดตัวอักษร */
+            margin: 4px 2px; /* ระยะห่างของปุ่ม */
+            cursor: pointer; /* ใช้เคอร์เซอร์เป็นตัวชี้ */
+            border-radius: 4px; /* ขอบเขตของปุ่มเม็ดกลม */
+        }
+
+        /* CSS สำหรับปุ่มล็อกเอาตัวเมื่อโฮเวอร์ */
+        .logout-button:hover {
+            background-color: #FF7F50; /* เปลี่ยนสีพื้นหลังเมื่อโฮเวอร์ */
+
+         }
+
+        /* CSS สำหรับหัวข้อ "...MOVING HEAD MACHINE..." */
+        h1 {
+            text-align: center; /* จัดข้อความใน <h1> กลางหน้า */
+        }
+        /* CSS สำหรับสถานะ "status: online" */
+            .online-status {
+            position: absolute;
+            top: 10px; /* ระยะห่างด้านบน */
+            left: 10px; /* ระยะห่างด้านซ้าย */
+            width: 10px; /* ขนาดกว้าง */
+            height: 20px; /* ขนาดสูง */
+            border-radius: 50%; /* ทำให้มีรูปร่างเป็นวงกลม */
+            background-color: green; /* สีพื้นหลังเขียว */
+            content: ''; /* ซ่อนเนื้อหาที่ไม่มี */
+        }
+        /* CSS สำหรับสถานะ "status: online" */
+            .online-status {
+            position: absolute;
+            top: 10px; /* ระยะห่างด้านบน */
+            left: 10px; /* ระยะห่างด้านซ้าย */
+            width: 40px; /* ขนาดกว้าง (เปลี่ยนเป็นขนาดที่คุณต้องการ) */
+            height: 40px; /* ขนาดสูง (เปลี่ยนเป็นขนาดที่คุณต้องการ) */
+            border-radius: 50%; /* ทำให้มีรูปร่างเป็นวงกลม */
+            background-color: green; /* สีพื้นหลังเขียว */
+            content: ''; /* ซ่อนเนื้อหาที่ไม่มี */
+}
+
+        /* CSS สำหรับสถานะ "status: offline" */
+            .offline-status {
+            position: absolute;
+            top: 10px; /* ระยะห่างด้านบน */
+            left: 10px; /* ระยะห่างด้านซ้าย */
+            width: 10px; /* ขนาดกว้าง */
+            height: 20px; /* ขนาดสูง */
+            border-radius: 50%; /* ทำให้มีรูปร่างเป็นวงกลม */
+            background-color: red; /* สีพื้นหลังแดง */
+            content: ''; /* ซ่อนเนื้อหาที่ไม่มี */
+        }
+        /* CSS สำหรับสถานะ "status: offline" */
+            .offline-status {
+             position: absolute;
+            top: 10px; /* ระยะห่างด้านบน */
+            left: 10px; /* ระยะห่างด้านซ้าย */
+            width: 40px; /* ขนาดกว้าง (เปลี่ยนเป็นขนาดที่คุณต้องการ) */
+            height: 40px; /* ขนาดสูง (เปลี่ยนเป็นขนาดที่คุณต้องการ) */
+            border-radius: 50%; /* ทำให้มีรูปร่างเป็นวงกลม */
+            background-color: red; /* สีพื้นหลังแดง */
+            content: ''; /* ซ่อนเนื้อหาที่ไม่มี */
+           }
+
+    </style>
+</head>
+<body>
+<body style="background-image: url('https://png.pngtree.com/thumb_back/fh260/background/20210710/pngtree-light-yellow-background-yellow-color-blur-image_738326.jpg'); background-size: cover; background-repeat: no-repeat;">
+       <div style="text-align: right; padding: 10px;">
+         <a href="/logout" class="logout-button">Logout</a>
+    </div>
+<h1><b>...MOVING HEAD MACHINE...</b></h1>
+    <div id="data-container">
+        <!-- ข้อมูลจะแสดงที่นี่ -->
+    </div>
+
+    <script>
+        let currentData = ''; // ใช้เก็บข้อมูลล่าสุด
+        let lastUpdateTime = Date.now(); // ใช้เก็บเวลาล่าสุดที่มีการอัปเดตข้อมูล
+        let dataContainer = document.getElementById('data-container'); // เก็บ Element ของข้อมูล
+        let statusText = document.createElement('div'); // สร้าง Element div สำหรับแสดงสถานะ
+        statusText.style.whiteSpace = 'nowrap'; // ไม่ให้ข้อความขึ้นบรรทัดใหม่
+
+        function updateData() {
+            fetch('/get_latest_content') // เรียก API ข้อมูลที่มีการอัปเดต
+                .then(response => response.text())
+                .then(data => {
+                    // ถ้ามีการอัปเดตข้อมูล
+                    if (data !== currentData) {
+                        // แสดงข้อมูลที่มีการอัปเดต
+                        dataContainer.innerText = data;
+                        currentData = data;
+                        lastUpdateTime = Date.now(); // อัปเดตเวลาล่าสุดที่มีการอัปเดตข้อมูล
+
+                        // แสดง "status: online" ถ้ามีการอัปเดตข้อมูล
+                        setStatusText('status: online');
+                    }
+                    else {
+                        // ถ้าไม่มีการอัปเดตและเวลาล่าสุดที่มีการอัปเดตข้อมูลเกิน 10 วินาที
+                        if (Date.now() - lastUpdateTime >= 10000 && statusText.innerText === 'status: online') {
+                            // แสดง "status: offline" ถ้าไม่มีการอัปเดตข้อมูลและสถานะก่อนหน้าคือ "status: online"
+                            setStatusText('status: offline');
+                        }
+                    }
+                });
+        }
+
+        function setStatusText(text) {
+            // ลบสถานะที่มีอยู่ (ถ้ามี) และแสดงสถานะใหม่
+            if (statusText.parentNode === dataContainer) {
+                dataContainer.removeChild(statusText);
+            }
+            statusText.innerText = text;
+            dataContainer.appendChild(statusText);
+        }
+
+        function startUpdateInterval() {
+            // เริ่มตับตัวจับเวลาสำหรับอัปเดตข้อมูลทุกวินาที
+            setInterval(updateData, 1000); // 1 วินาที
+        }
+
+        // เมื่อหน้าเว็บโหลดขึ้นมา
+        window.onload = function () {
+            // เริ่มตับตัวจับเวลาสำหรับอัปเดตข้อมูลทุกวินาที
+            startUpdateInterval();
+        }
+        function updateData() {
+    fetch('/get_latest_content')
+        .then(response => response.text())
+        .then(data => {
+            if (data !== currentData) {
+                dataContainer.innerText = data;
+                currentData = data;
+                lastUpdateTime = Date.now();
+                setStatusText('status: online');
+                // เพิ่มสถานะ "status: online" ด้วยไฟสีเขียว
+                const onlineStatus = document.createElement('div');
+                onlineStatus.className = 'online-status';
+                dataContainer.appendChild(onlineStatus);
+            } else {
+                if (Date.now() - lastUpdateTime >= 10000 && statusText.innerText === 'status: online') {
+                    setStatusText('status: offline');
+                    // เพิ่มสถานะ "status: offline" ด้วยไฟสีแดง
+                    const offlineStatus = document.createElement('div');
+                    offlineStatus.className = 'offline-status';
+                    dataContainer.appendChild(offlineStatus);
+                }
+
+            }
+
+        });
+}
+
+    </script>
+</body>
+</html>
